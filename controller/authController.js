@@ -4,28 +4,31 @@ import JWT from "jsonwebtoken";
 
 export const registerController = async (req, res) => {
   try {
-    const { fullName, email, password, phone, address } = req.body;
+    const { fullName, email, password, phone, address, answer } = req.body;
     if (!fullName) {
-      return res.send({ error: "name is required" });
+      return res.send({ message: "name is required" });
     }
     if (!email) {
-      return res.send({ error: "email is required" });
+      return res.send({ message: "email is required" });
     }
     if (!password) {
-      return res.send({ error: "password is required" });
+      return res.send({ message: "password is required" });
     }
     if (!phone) {
-      return res.send({ error: "phone is required" });
+      return res.send({ message: "phone is required" });
     }
     if (!address) {
-      return res.send({ error: "address is required" });
+      return res.send({ message: "address is required" });
+    }
+    if (!answer) {
+      return res.send({ message: "answer is required" });
     }
 
     // existing user
     const existingUser = await userModel.findOne({ email });
     if (existingUser) {
       return res.status(200).send({
-        success: true,
+        success: false,
         message: "ALready a user, now login.",
       });
     }
@@ -40,15 +43,16 @@ export const registerController = async (req, res) => {
       phone,
       address,
       password: hashedPassword,
+      answer,
     }).save();
-    res.status({
+    return res.status(200).json({
       success: true,
       message: "User Registered Successfully.",
       user,
     });
   } catch (error) {
     console.log(error);
-    res.status(500).send({
+    return res.status(500).send({
       success: false,
       message: "Error in registering",
       error,
@@ -85,7 +89,7 @@ export const loginController = async (req, res) => {
     const token = await JWT.sign({ _id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "7d",
     });
-    res.status(200).send({
+    return res.status(200).send({
       success: true,
       message: "Login SuccessFully",
       user: {
@@ -98,9 +102,46 @@ export const loginController = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    res.status(500).send({
+    return res.status(500).send({
       success: false,
       message: "Error in Login",
+      error,
+    });
+  }
+};
+
+export const forgotPasswordController = async (req, res) => {
+  try {
+    const { email, answer, newPassword } = req.body;
+    if (!email) {
+      return res.status(400).send({ message: "Emai is required" });
+    }
+    if (!answer) {
+      return res.status(400).send({ message: "answer is required" });
+    }
+    if (!newPassword) {
+      return res.status(400).send({ message: "New Password is required" });
+    }
+    //check
+    const user = await userModel.findOne({ email, answer });
+    //validation
+    if (!user) {
+      return res.status(404).send({
+        success: false,
+        message: "Wrong Email Or Answer",
+      });
+    }
+    const hashed = await hashPassword(newPassword);
+    await userModel.findByIdAndUpdate(user._id, { password: hashed });
+    return res.status(200).send({
+      success: true,
+      message: "Password Reset Successfully",
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({
+      success: false,
+      message: "Something went wrong",
       error,
     });
   }
@@ -112,6 +153,6 @@ export const testController = (req, res) => {
     res.send("protecteted ROuter");
   } catch (error) {
     console.log(error);
-    res.send({ error });
+    return res.send({ error });
   }
 };

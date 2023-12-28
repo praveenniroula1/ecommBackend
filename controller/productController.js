@@ -2,9 +2,9 @@ import productModel from "../models/productModel.js";
 import fs from "fs";
 import slugify from "slugify";
 
-export const createProductController = async () => {
+export const createProductController = async (req, res) => {
   try {
-    const { name, description, slug, price, category, quantity, shipping } =
+    const { name, description, price, category, quantity, shipping } =
       req.fields;
     const { photo } = req.files;
 
@@ -24,9 +24,6 @@ export const createProductController = async () => {
 
       case !quantity:
         return res.status(500).send({ error: "quantity is required" });
-
-      case !shipping:
-        return res.status(500).send({ error: "shipping is required" });
 
       case photo && photo.size > 1000000:
         return res
@@ -138,7 +135,7 @@ export const deleteProductController = async (req, res) => {
 // update
 export const updateProductController = async (req, res) => {
   try {
-    const { name, description, slug, price, category, quantity, shipping } =
+    const { name, description, price, category, quantity, shipping } =
       req.fields;
     const { photo } = req.files;
 

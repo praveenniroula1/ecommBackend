@@ -38,7 +38,7 @@ export const updateCategoryController = async (req, res) => {
   try {
     const { name } = req.body;
     const { id } = req.params;
-    const category = await categoryModel.findOneAndUpdate(
+    const category = await categoryModel.findByIdAndUpdate(
       id,
       {
         name,

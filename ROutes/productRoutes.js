@@ -29,10 +29,10 @@ router.get("/get-product/:slug", getSingleProductController);
 router.get("/product-photo/:pid", productPhotoController);
 
 // Delete product
-router.delete("/product/:pid", deleteProductController);
+router.delete("/delete-product/:pid", deleteProductController);
 
 // Update product
-router.post(
+router.put(
   "/update-product/:pid",
   requireSignIn,
   isAdmin,

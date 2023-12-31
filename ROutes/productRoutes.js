@@ -1,5 +1,7 @@
 import express from "express";
 import {
+  braintreePaymentController,
+  braintreeTokenController,
   createProductController,
   deleteProductController,
   getProductController,
@@ -63,4 +65,11 @@ router.put(
   formidable(),
   updateProductController
 );
+
+// payment token
+router.get("/braintree/token", braintreeTokenController);
+
+// payment
+router.get("/braintree/payment", braintreePaymentController);
+
 export default router;

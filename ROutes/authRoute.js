@@ -4,8 +4,8 @@ const router = express.Router();
 // Register using Post for new user
 import {
   forgotPasswordController,
-  getAllOrderController,
-  getOrderController,
+  getAllOrdersController,
+  getOrdersController,
   orderStatusController,
   registerController,
   updateProfileController,
@@ -38,10 +38,10 @@ router.get("/admin-auth", requireSignIn, isAdmin, (req, res) => {
 router.put("/profile", requireSignIn, updateProfileController);
 
 // orders
-router.get("/orders", requireSignIn, getOrderController);
+router.get("/orders", requireSignIn, getOrdersController);
 
 // orders
-router.get("/all-orders", requireSignIn, isAdmin, getAllOrderController);
+router.get("/all-orders", requireSignIn, isAdmin, getAllOrdersController);
 
 // orders update and status
 router.put(

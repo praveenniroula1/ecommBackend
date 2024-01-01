@@ -6,7 +6,7 @@ import slugify from "slugify";
 import braintree from "braintree";
 import orderModel from "../models/orderModel.js";
 
-// Payment gateway
+//payment gateway
 var gateway = new braintree.BraintreeGateway({
   environment: braintree.Environment.Sandbox,
   merchantId: process.env.BRAINTREE_MERCHANT_ID,
@@ -19,54 +19,49 @@ export const createProductController = async (req, res) => {
     const { name, description, price, category, quantity, shipping } =
       req.fields;
     const { photo } = req.files;
-
-    // validation
+    //alidation
     switch (true) {
       case !name:
-        return res.status(500).send({ error: "name is required" });
-
+        return res.status(500).send({ error: "Name is Required" });
       case !description:
-        return res.status(500).send({ error: "description is required" });
-
+        return res.status(500).send({ error: "Description is Required" });
       case !price:
-        return res.status(500).send({ error: "price is required" });
-
+        return res.status(500).send({ error: "Price is Required" });
       case !category:
-        return res.status(500).send({ error: "category is required" });
-
+        return res.status(500).send({ error: "Category is Required" });
       case !quantity:
-        return res.status(500).send({ error: "quantity is required" });
-
+        return res.status(500).send({ error: "Quantity is Required" });
       case photo && photo.size > 1000000:
         return res
           .status(500)
-          .send({ error: "required photo and cannot exceed more than 1 mb" });
+          .send({ error: "photo is Required and should be less then 1mb" });
     }
-    const product = new productModel({ ...req.fields, slug: slugify(name) });
+
+    const products = new productModel({ ...req.fields, slug: slugify(name) });
     if (photo) {
-      product.photo.data = fs.readFileSync(photo.path);
-      product.photo.contentType = photo.type;
+      products.photo.data = fs.readFileSync(photo.path);
+      products.photo.contentType = photo.type;
     }
-    await product.save();
+    await products.save();
     res.status(201).send({
       success: true,
-      message: "Succesfully created product",
-      product,
+      message: "Product Created Successfully",
+      products,
     });
   } catch (error) {
     console.log(error);
     res.status(500).send({
       success: false,
       error,
-      message: "Error in creating product",
+      message: "Error in crearing product",
     });
   }
 };
 
-// getProductController
+//get all products
 export const getProductController = async (req, res) => {
   try {
-    const product = await productModel
+    const products = await productModel
       .find({})
       .populate("category")
       .select("-photo")
@@ -74,21 +69,20 @@ export const getProductController = async (req, res) => {
       .sort({ createdAt: -1 });
     res.status(200).send({
       success: true,
-      message: "All product",
-      product,
-      countTotal: product.length,
+      counTotal: products.length,
+      message: "ALlProducts ",
+      products,
     });
   } catch (error) {
     console.log(error);
     res.status(500).send({
       success: false,
-      error,
-      message: "Error in Getting product",
+      message: "Erorr in getting products",
+      error: error.message,
     });
   }
 };
-
-//
+// get single product
 export const getSingleProductController = async (req, res) => {
   try {
     const product = await productModel
@@ -97,15 +91,15 @@ export const getSingleProductController = async (req, res) => {
       .populate("category");
     res.status(200).send({
       success: true,
-      message: "Single product fethced",
+      message: "Single Product Fetched",
       product,
     });
   } catch (error) {
     console.log(error);
     res.status(500).send({
       success: false,
+      message: "Eror while getitng single product",
       error,
-      message: "Error in Getting Single product",
     });
   }
 };
@@ -217,6 +211,7 @@ export const productFiltersController = async (req, res) => {
   }
 };
 
+// product count
 export const productCountController = async (req, res) => {
   try {
     const total = await productModel.find({}).estimatedDocumentCount();
@@ -227,9 +222,9 @@ export const productCountController = async (req, res) => {
   } catch (error) {
     console.log(error);
     res.status(400).send({
-      success: false,
-      message: "Error in counting Products",
+      message: "Error in product count",
       error,
+      success: false,
     });
   }
 };
@@ -259,26 +254,31 @@ export const productListController = async (req, res) => {
   }
 };
 
+// search product
 export const searchProductController = async (req, res) => {
   try {
     const { keyword } = req.params;
-    const results = await productModel({
-      $or: [
-        { name: { $regex: keyword, $options: "i" } },
-        { description: { $regex: keyword, $options: "i" } },
-      ],
-    }).select("-photo");
-    res.json(results);
+    const resutls = await productModel
+      .find({
+        $or: [
+          { name: { $regex: keyword, $options: "i" } },
+          { description: { $regex: keyword, $options: "i" } },
+        ],
+      })
+      .select("-photo");
+    res.json(resutls);
   } catch (error) {
     console.log(error);
     res.status(400).send({
       success: false,
-      message: "error in search control",
+      message: "Error In Search Product API",
       error,
     });
   }
 };
-export const relatedProductController = async (req, res) => {
+
+// similar products
+export const realtedProductController = async (req, res) => {
   try {
     const { pid, cid } = req.params;
     const products = await productModel
@@ -286,7 +286,9 @@ export const relatedProductController = async (req, res) => {
         category: cid,
         _id: { $ne: pid },
       })
-      .select("-photo".limit(3).populate("category"));
+      .select("-photo")
+      .limit(3)
+      .populate("category");
     res.status(200).send({
       success: true,
       products,
@@ -295,32 +297,34 @@ export const relatedProductController = async (req, res) => {
     console.log(error);
     res.status(400).send({
       success: false,
-      message: "error in getting related product",
-      error,
-    });
-  }
-};
-export const productCategoryController = async (req, res) => {
-  try {
-    const category = await categoryModel.findOne({
-      slug: req.params.slug,
-    });
-    const products = await productModel.find({ category }).populate("category");
-    res.status(200).send({
-      success: true,
-      products,
-    });
-  } catch (error) {
-    console.log(error);
-    res.status(400).send({
-      success: false,
-      message: "error in getting category wise product",
+      message: "error while geting related product",
       error,
     });
   }
 };
 
-// payment token
+// get prdocyst by catgory
+export const productCategoryController = async (req, res) => {
+  try {
+    const category = await categoryModel.findOne({ slug: req.params.slug });
+    const products = await productModel.find({ category }).populate("category");
+    res.status(200).send({
+      success: true,
+      category,
+      products,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(400).send({
+      success: false,
+      error,
+      message: "Error While Getting products",
+    });
+  }
+};
+
+//payment gateway api
+//token
 export const braintreeTokenController = async (req, res) => {
   try {
     gateway.clientToken.generate({}, function (err, response) {
@@ -332,17 +336,13 @@ export const braintreeTokenController = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    res.status(400).send({
-      success: false,
-      message: "error in getting Token for payment",
-      error,
-    });
   }
 };
-// payment token
-export const braintreePaymentController = async (req, res) => {
+
+//payment
+export const brainTreePaymentController = async (req, res) => {
   try {
-    const { cart, nonce } = req.body;
+    const { nonce, cart } = req.body;
     let total = 0;
     cart.map((i) => {
       total += i.price;

@@ -104,6 +104,7 @@ export const loginController = async (req, res) => {
       },
       token,
     });
+    console.log(user.name);
   } catch (error) {
     console.log(error);
     res.status(500).send({
